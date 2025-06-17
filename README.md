@@ -3,7 +3,13 @@
 API Estúdio de Tatuagem
 API para gerenciar clientes, tatuadores, agendamentos e envio de confirmações por e-mail.
 
-
+## Tecnologias 
+- `Node.js`
+- `Express`
+- `JWT (autenticação)`
+- `Bcrypt (hash de senha)`
+- `Nodemailer (envio de e-mail)`
+- `Multer (upload de imagens)`
 ## Endpoints
 
 ### Clientes
