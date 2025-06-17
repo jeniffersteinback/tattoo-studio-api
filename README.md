@@ -1,6 +1,8 @@
 # Tattoo Studio API
 
-API para gerenciamento de agendamentos de estúdio de tatuagem.
+API Estúdio de Tatuagem
+API para gerenciar clientes, tatuadores, agendamentos e envio de confirmações por e-mail.
+
 
 ## Endpoints
 

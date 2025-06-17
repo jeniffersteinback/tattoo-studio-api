@@ -1,13 +1,11 @@
 const express = require('express');
 const router = express.Router();
 
-// Simulando banco de dados em memória
-const agendamentos = [];
-let proximoId = 1;
-
-// (Opcional) Middleware de autenticação JWT
 const jwt = require('jsonwebtoken');
 const SECRET = process.env.JWT_SECRET;
+
+const agendamentos = [];
+let proximoId = 1;
 
 function autenticarToken(req, res, next) {
   const authHeader = req.headers['authorization'];
@@ -16,12 +14,11 @@ function autenticarToken(req, res, next) {
 
   jwt.verify(token, SECRET, (err, cliente) => {
     if (err) return res.status(403).json({ message: 'Token inválido' });
-    req.cliente = cliente; // cliente.id e cliente.email disponíveis
+    req.cliente = cliente;
     next();
   });
 }
 
-// Rota POST para criar agendamento
 router.post('/', autenticarToken, (req, res) => {
   const { data, hora, tatuadorId } = req.body;
 
@@ -39,6 +36,7 @@ router.post('/', autenticarToken, (req, res) => {
   };
 
   agendamentos.push(novoAgendamento);
+
   res.status(201).json({
     message: 'Agendamento realizado com sucesso',
     agendamento: novoAgendamento

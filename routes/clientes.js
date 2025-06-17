@@ -1,42 +1,38 @@
 const express = require('express');
-const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
-const router = express.Router();
+require('dotenv').config();
 
-const saltRounds = 10;
+const router = express.Router();
+const clientes = []; // Simulação de "banco de dados"
 const SECRET = process.env.JWT_SECRET;
 
-// Banco simulado (mantém dados enquanto o servidor roda)
-const clientes = [];
-
+// Configurar transporter do Nodemailer
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.umbler.com",
+  port: 587,
+  secure: false,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
   }
 });
 
-// Rota de cadastro
+//  Cadastro (register)
 router.post('/register', async (req, res) => {
+  const { nome, email, senha } = req.body;
+
+  if (!nome || !email || !senha) {
+    return res.status(400).json({ message: 'Nome, email e senha são obrigatórios' });
+  }
+
+  const hashed = await bcrypt.hash(senha, 10);
+  const novoCliente = { id: clientes.length + 1, nome, email, senha: hashed };
+  clientes.push(novoCliente);
+
+  // Envia e-mail de confirmação
   try {
-    const { nome, email, senha } = req.body;
-
-    if (!nome || !email || !senha) {
-      return res.status(400).json({ message: "Nome, email e senha são obrigatórios" });
-    }
-
-    // Verifica se email já existe
-    if (clientes.find(c => c.email === email)) {
-      return res.status(400).json({ message: "Email já cadastrado" });
-    }
-
-    const hashed = await bcrypt.hash(senha, saltRounds);
-    const novoCliente = { id: clientes.length + 1, nome, email, senha: hashed };
-    clientes.push(novoCliente);
-
-    // Envia email de confirmação
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: email,
@@ -44,34 +40,23 @@ router.post('/register', async (req, res) => {
       text: `Olá ${nome}, seu cadastro foi realizado com sucesso!`
     });
 
-    res.json({ message: "Cadastro realizado com sucesso." });
+    res.json({ message: "Cadastro realizado com sucesso!", cliente: { id: novoCliente.id, nome, email } });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Erro no servidor" });
+    res.status(500).json({ message: "Erro ao enviar e-mail", error });
   }
 });
 
-// Rota de login
+//  Login
 router.post('/login', async (req, res) => {
-  try {
-    const { email, senha } = req.body;
+  const { email, senha } = req.body;
 
-    const cliente = clientes.find(u => u.email === email);
-    if (!cliente) {
-      return res.status(401).json({ error: "Credenciais inválidas." });
-    }
-
-    const senhaValida = await bcrypt.compare(senha, cliente.senha);
-    if (!senhaValida) {
-      return res.status(401).json({ error: "Credenciais inválidas." });
-    }
-
-    const token = jwt.sign({ id: cliente.id, email: cliente.email }, SECRET, { expiresIn: '1h' });
-    res.json({ token });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Erro no servidor" });
+  const cliente = clientes.find(c => c.email === email);
+  if (!cliente || !(await bcrypt.compare(senha, cliente.senha))) {
+    return res.status(401).json({ message: "Credenciais inválidas" });
   }
+
+  const token = jwt.sign({ id: cliente.id, email: cliente.email }, SECRET, { expiresIn: '1h' });
+  res.json({ message: "Login realizado", token });
 });
 
 module.exports = router;
